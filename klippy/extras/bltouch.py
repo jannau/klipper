@@ -17,7 +17,15 @@ ENDSTOP_SAMPLE_COUNT = 4
 
 Commands = {
     None: 0.0, 'pin_down': 0.000700, 'touch_mode': 0.001200,
-    'pin_up': 0.001500, 'self_test': 0.001800, 'reset': 0.002200,
+    'pin_up': 0.001500, 'self_test': 0.001800,
+    'switch_5v': 0.002000, 'switch_od': 0.002100,
+    'reset': 0.002200,
+}
+
+BLTouchV3Modes = {
+    'none': None,
+    'logic_5v': 'switch_5v',
+    'logic_voltage_free': 'switch_od',
 }
 
 # BLTouch "endstop" wrapper
@@ -39,6 +47,8 @@ class BLTouchEndstopWrapper:
         mcu = pin_params['chip']
         mcu.register_config_callback(self._build_config)
         self.mcu_endstop = mcu.setup_pin('endstop', pin_params)
+        # Configure sensor mode on BLTouch smart v3.0
+        self.sensor_mode_cmd = config.getchoice('sensor_mode', BLTouchV3Modes, 'none')
         # Setup for sensor test
         self.next_test_time = 0.
         self.pin_up_not_triggered = config.getboolean(
@@ -144,7 +154,8 @@ class BLTouchEndstopWrapper:
     def home_prepare(self):
         self.test_sensor()
         self.sync_print_time()
-        self.send_cmd('pin_down', duration=self.pin_move_time - MIN_CMD_TIME)
+        self.send_cmd('pin_down', duration=self.pin_move_time - 2 * MIN_CMD_TIME)
+        self.send_cmd(self.sensor_mode_cmd)
         self.send_cmd(None)
         self.sync_print_time()
         self.mcu_endstop.home_prepare()
