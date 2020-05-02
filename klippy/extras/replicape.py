@@ -258,12 +258,13 @@ class Replicape:
             pclass, channel = self.pins[pin]
             return pclass(self, channel, pin_type, pin_params)
         elif pin in self.servo_pins:
+            servo_pin = servo_pwm(self, pin_params)
             # enable servo pins via shift registers
             index = self.servo_pins[pin]
             self.sr_enabled[index] |= 1
             self.sr_disabled[index] |= 1
             self.sr_spi.spi_send(self.sr_disabled)
-            return servo_pwm(self, pin_params)
+            return servo_pin
         raise pins.error("Unknown replicape pin %s" % (pin,))
 
 def load_config(config):
